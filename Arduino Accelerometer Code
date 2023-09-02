@@ -1,0 +1,123 @@
+%This is a code meant to be run on Arduino
+%import accelerometer data%
+rawdata=readmatrix();
+t=rawdata(:,1);
+a_tx=rawdata(:,2);
+a_ty=rawdata(:,3);
+a_tz=rawdata(:,4);
+%%
+
+%Plotting the acceleration, velocity, position against time in x direction%
+figure(1)
+plot(t,a_tx)
+xlabel('Time in s')
+ylabel('acceleration in x direction m/s^2')
+grid on
+
+v_tx=cumtrapz(t,a_tx);
+figure(2)
+plot(t,v_tx)
+xlabel('Time in s')
+ylabel('velocity in x direction m/s')
+grid on
+
+x_tx=cumtrapz(t,v_tx);
+figure(3)
+plot(t,x_tx)
+xlabel('Time in s')
+ylabel('position in x direction m')
+grid on
+%%
+%Plotting of acceleration, velocity, position in y direction%%%%%%%%%
+
+figure(4)
+plot(t,a_ty)
+xlabel('Time in s')
+ylabel('acceleration in y direction m/s^2')
+grid on
+
+v_ty=cumtrapz(t,a_ty);
+figure(5)
+plot(t,v_ty)
+xlabel('Time in s')
+ylabel('velocity in y direction m/s')
+grid on
+
+x_ty=cumtrapz(t,v_ty);
+figure(6)
+plot(t,x_ty)
+xlabel('Time in s')
+ylabel('position in y direction m')
+grid on
+%%
+%Plotting of acceleration, velocity, position in z direction %
+
+figure(7)
+plot(t,a_tz)
+xlabel('Time in s')
+ylabel('acceleration in z direction m/s^2')
+grid on
+
+v_tz=cumtrapz(t,a_tz);
+figure(8)
+plot(t,v_tz)
+xlabel('Time in s')
+ylabel('velocity in z direction m/s')
+grid on
+
+x_tz=cumtrapz(t,v_tz);
+figure(9)
+plot(t,x_tz)
+xlabel('Time in s')
+ylabel('position in z direction m')
+grid on
+figure(10)
+an=animatedline(a_tx,a_ty,a_tz,)
+
+
+
+
+%% Set up the Arduino connection
+a = arduino('COM3','Uno');
+accelerometer = mpu6050(a);
+
+% Set up the output file
+output_file = fopen('displacement_data.csv','w');
+fprintf(output_file, 'Time,X Displacement,Y Displacement,Z Displacement\n');
+
+% Set the initial values for the displacement
+x_disp = 0;
+y_disp = 0;
+z_disp = 0;
+
+% Set the sampling time
+sampling_time = 0.1; % in seconds
+
+% Set the time for the experiment
+experiment_time = 60; % in seconds
+
+% Start the experiment
+t0 = tic;
+while toc(t0) < experiment_time
+    
+    % Read the acceleration data
+    [accel_x, accel_y, accel_z] = readAcceleration(accelerometer);
+    
+    % Calculate the displacement
+    x_disp = x_disp + accel_x*sampling_time^2/2;
+    y_disp = y_disp + accel_y*sampling_time^2/2;
+    z_disp = z_disp + accel_z*sampling_time^2/2;
+    
+    % Write the displacement data to the output file
+    fprintf(output_file, '%f,%f,%f,%f\n', toc(t0), x_disp, y_disp, z_disp);
+    
+    % Pause for the sampling time
+    pause(sampling_time);
+end
+
+% Close the output file
+fclose(output_file);
+
+% Disconnect the Arduino
+clear a;
+
